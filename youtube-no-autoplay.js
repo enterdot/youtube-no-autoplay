@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         YouTube No Autoplay
-// @version      1.0
+// @version      1.1
 // @description  Simple autoplay disabler that survives YouTube navigation
 // @author       enterdot
 // @match        https://www.youtube.com/*
@@ -13,14 +13,16 @@
 (function() {
   'use strict';
 
-  window.YouTubeAutoplayController = {
+  window.YouTubeNoAutoplay = {
 
+    // Config variables
     DEBUG: true,
+    ENGAGEMENT_THRESHOLD: 5,
     RETRY_DELAY: 500,
     TRANSITION_DELAY: 500,
     MAX_RETRIES: 10,
-    ENGAGEMENT_THRESHOLD: 5,
 
+    // State variables
     observer: null,
     lastUrl: '',
     autoplayProcessed: false,
@@ -33,6 +35,30 @@
       if (this.DEBUG) {
         console.log(`[YouTube No Autoplay]: ${message}`);
       }
+    },
+
+    parseUrlTimeSkip: function(url) {
+      // Extract time skip from URL like &t=10s or &t=1m30s
+      const match = url.match(/[&?]t=([0-9]+(?:h[0-9]*)?(?:m[0-9]*)?(?:s)?|[0-9]+)/);
+      if (!match) return 0;
+
+      const timeStr = match[1];
+
+      // Handle formats like "90" (just seconds), "1m30s", "1h2m30s"
+      if (/^\d+$/.test(timeStr)) {
+        return parseInt(timeStr);
+      }
+
+      let totalSeconds = 0;
+      const hours = timeStr.match(/(\d+)h/);
+      const minutes = timeStr.match(/(\d+)m/);
+      const seconds = timeStr.match(/(\d+)s/);
+
+      if (hours) totalSeconds += parseInt(hours[1]) * 3600;
+      if (minutes) totalSeconds += parseInt(minutes[1]) * 60;
+      if (seconds) totalSeconds += parseInt(seconds[1]);
+
+      return totalSeconds;
     },
 
     setupEngagementWatcher: function() {
@@ -48,11 +74,15 @@
         video.removeEventListener('timeupdate', this.engagementWatcher);
       }
 
+      // Calculate adjusted threshold based on URL time skip
+      const urlTimeSkip = this.parseUrlTimeSkip(window.location.href);
+      const adjustedThreshold = this.ENGAGEMENT_THRESHOLD + urlTimeSkip;
+
       const self = this;
       this.engagementWatcher = function() {
-        if (video.currentTime > self.ENGAGEMENT_THRESHOLD && !self.userIsEngaged) {
+        if (video.currentTime > adjustedThreshold && !self.userIsEngaged) {
           self.userIsEngaged = true;
-          self.log(`User engagement threshold reached (${video.currentTime.toFixed(1)}s > ${self.ENGAGEMENT_THRESHOLD}s), allowing autoplay.`);
+          self.log(`User engagement threshold reached. ${video.currentTime.toFixed(1)}s > ${adjustedThreshold}s (${self.ENGAGEMENT_THRESHOLD}s + ${urlTimeSkip}s), allowing autoplay.`);
 
           video.removeEventListener('timeupdate', self.engagementWatcher);
           self.engagementWatcher = null;
@@ -60,7 +90,7 @@
       };
 
       video.addEventListener('timeupdate', this.engagementWatcher);
-      this.log(`Engagement tracker set up, threshold is ${this.ENGAGEMENT_THRESHOLD}s.`);
+      this.log(`Engagement tracker set up, threshold is ${adjustedThreshold}s (${this.ENGAGEMENT_THRESHOLD}s + ${urlTimeSkip}s).`);
     },
 
     processAutoplay: function() {
@@ -221,8 +251,35 @@
         setTimeout(init, 500);
       }
     },
+
+    // Test function for debugging
+    test: function() {
+      console.log('=== YouTube No Autoplay Test ===');
+      console.log('Script initialized:', this.isInitialized);
+      console.log('Current URL:', window.location.href);
+      console.log('URL time skip:', this.parseUrlTimeSkip(window.location.href), 'seconds');
+      console.log('Base engagement threshold:', this.ENGAGEMENT_THRESHOLD, 'seconds');
+      console.log('Adjusted threshold:', this.ENGAGEMENT_THRESHOLD + this.parseUrlTimeSkip(window.location.href), 'seconds');
+      console.log('User engaged:', this.userIsEngaged);
+
+      const video = document.querySelector('video');
+      console.log('Video element found:', !!video);
+      if (video) {
+        console.log('Video current time:', video.currentTime.toFixed(1) + 's');
+      }
+
+      const autoplayElement = document.querySelector('.ytp-autonav-toggle-button');
+      console.log('Autoplay element found:', !!autoplayElement);
+      if (autoplayElement) {
+        console.log('Autoplay enabled:', autoplayElement.getAttribute('aria-checked') === 'true');
+      }
+
+      console.log('=== End Test ===');
+    }
   };
 
-  window.YouTubeAutoplayController.initialize();
+  window.testYouTubeNoAutoplay = () => window.YouTubeNoAutoplay.test();
+
+  window.YouTubeNoAutoplay.initialize();
 
 })();
