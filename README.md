@@ -14,7 +14,6 @@ A simple userscript that automatically disables YouTube's autoplay feature unles
 
 ### 1. Install a userscript manager
 
-Choose one for your browser:
 - **Chrome/Brave/Edge**: [Tampermonkey](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo) or [Violentmonkey](https://chrome.google.com/webstore/detail/violent-monkey/jinjaccalgkegednnccohejagnlnfdag)
 - **Firefox**: [Tampermonkey](https://addons.mozilla.org/en-US/firefox/addon/tampermonkey/), [Greasemonkey](https://addons.mozilla.org/en-US/firefox/addon/greasemonkey/) or [Violentmonkey](https://addons.mozilla.org/firefox/addon/violentmonkey/)
 - **Safari**: [Tampermonkey](https://apps.apple.com/us/app/tampermonkey/id1482490089)
@@ -32,7 +31,7 @@ Choose one for your browser:
 3. Click the **"Console"** tab
 4. Look for messages starting with `[YouTube No Autoplay]`
 
-## ⚙️ Configuration
+## Configuration
 
 You can customize the script behavior by modifying these values:
 
@@ -43,8 +42,6 @@ ENGAGEMENT_THRESHOLD: 5,  // Seconds to watch before allowing autoplay
 ```
 
 ## Troubleshooting
-
-### Debug Function
 
 Run this in the browser console on any YouTube page:
 
